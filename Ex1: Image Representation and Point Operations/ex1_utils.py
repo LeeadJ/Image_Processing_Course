@@ -48,7 +48,12 @@ def imDisplay(filename: str, representation: int):
     :param representation: GRAY_SCALE or RGB
     :return: None
     """
-    pass
+    image = imReadAndConvert((filename, representation))
+    plt.show(image)
+    if representation == LOAD_GRAY_SCALE:
+        plt.gray()
+    plt.show()
+
 
 
 def transformRGB2YIQ(imgRGB: np.ndarray) -> np.ndarray:

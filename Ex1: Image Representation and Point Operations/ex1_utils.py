@@ -62,7 +62,9 @@ def transformRGB2YIQ(imgRGB: np.ndarray) -> np.ndarray:
     :param imgRGB: An Image in RGB
     :return: A YIQ in image color space
     """
-    pass
+    YIQ_MATRIX = np.array([[0.299, 0.587, 0.114], [0.596, -0.275, -0.321], [0.212, -0.523, 0.311]])
+    imgYIQ = np.dot(imgRGB, YIQ_MATRIX.transpose())
+    return imgYIQ
 
 
 def transformYIQ2RGB(imgYIQ: np.ndarray) -> np.ndarray:

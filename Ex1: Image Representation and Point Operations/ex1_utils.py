@@ -56,7 +56,6 @@ def imDisplay(filename: str, representation: int):
     plt.show()
 
 
-
 def transformRGB2YIQ(imgRGB: np.ndarray) -> np.ndarray:
     """
     Converts an RGB image to YIQ color space
@@ -82,16 +81,17 @@ def hsitogramEqualize(imgOrig: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarra
         :ret
     """
     # check if image is RGB.
-    image = np.copy(imgOrig) # making a copy of original the image
-    image_shape = image.shape # get the shape of the image
-    isRGB = False # init a flag to check if the image is RGB or not
+    global imgYIQ
+    image = np.copy(imgOrig)  # making a copy of original the image
+    image_shape = image.shape  # get the shape of the image
+    isRGB = False  # init a flag to check if the image is RGB or not
 
     # Check if the image has more than 2 dimensions. If so, it is RGB:
     if len(image_shape) > 2:
         # Convert image from RGB to YIQ
         imgYIQ = transformRGB2YIQ(image)
         # extracting the Y channel from imgYIQ (greyscale version of the image)
-        image = imgYIQ[:, :, 0]
+        image = imgYIQ[..., 0]
         isRGB = True
 
     # Normalize the pixel values between 0 and 255
@@ -99,7 +99,7 @@ def hsitogramEqualize(imgOrig: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarra
     # Round the normalized pixel values to the nearest integer
     image = (np.around(image)).astype('unit8')
 
-    # Calculating the image's histogram:
+    # Calculating the image's histogram (range=[0,255]):
     # Flatten the original image to a 1d array
     image_flattened = image.ravel()
     # Create an empty histogram array with 256 bins
@@ -146,7 +146,7 @@ def hsitogramEqualize(imgOrig: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarra
     # If the original image was RGB, convert it back to RGB after equalization
     if isRGB:
         # Convert Y channel back to [0,1] range and replace it in the YIQ array
-        imgYIQ[:, :, 0] = image_equalized / 255
+        imgYIQ[..., 0] = image_equalized / 255
         # Convert the YIQ image back to RGB and return it
         image_equalized = transformYIQ2RGB(imgYIQ)
 
@@ -161,4 +161,85 @@ def quantizeImage(imOrig: np.ndarray, nQuant: int, nIter: int) -> (List[np.ndarr
         :param nIter: Number of optimization loops
         :return: (List[qImage_i],List[error_i])
     """
-    pass
+    # Check if image is RGB and convert to grayscale if necessary:
+    if imOrig.ndim == 3 and imOrig.shape[-1] == 3:
+        isRGB = True
+        imgYIQ = transformRGB2YIQ(imOrig)
+        image = imgYIQ[..., 0]
+    else:
+        image = np.copy(imOrig)
+        isRGB = False
+
+    # Initializing he lists to return:
+    images = []
+    errors = []
+
+    # Normalizing the pixels of image from [0,1] to [0,255]
+    image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX)
+    image = image.astype('unit8')
+    # Calculating the histogram of the image
+    histogram, bins = np.histogram(image, 256, [0, 255])
+
+    # Creating borders for quantization process:
+    borders = np.zeros(nQuant + 1, dtype=np.int)
+    borders_counter = 0;
+    for i in range(nQuant + 1):
+        borders[i] = i * (255.0 / nQuant)
+    borders[-1] = 256
+
+    # Main loop:
+    for i in range(nIter):
+        # Create array to store the value of histogram counts for each border
+        quantization_levels = np.zeros(nQuant, dtype=int)  # q_array
+
+        # Calculate the value of histogram counts of pixel intensities within the border:
+        for j in range(nQuant):
+            # create an array containing the histogram counts for each pixel intensity
+            hist_counts = histogram[borders[j]:borders[j + 1]]  # q
+            # create an array containing the pixel intensities
+            pixel_intensity_range = np.arange(int(borders[j]), int(borders[j + 1]))  # rng
+            quantization_levels[j] = (pixel_intensity_range * hist_counts).sum() / (hist_counts.sum().astype(int))
+
+        # Recalculate the borders of the partitions based on the average of the quantization levels"
+        # Store the first and last elements of the current border array
+        z_first = borders[0]
+        z_last = borders[-1]
+        # Initialize a new array for the updated borders
+        borders = np.zeros_like(borders)
+        # Loop through each partition  (except first and last) and calculate new border value:
+        for k in range(1, nQuant):
+            borders[k] = (quantization_levels[k - 1] + quantization_levels[k]) / 2
+
+        # Update the first and last values
+        borders[0] = z_first
+        borders[-1] = z_last
+
+        # Recoloring the image:
+        # create new array with the same shape and sata type as image
+        temporary_image = np.zeros_like(image)
+        for l in range(nQuant):
+            quant_level_boundary = borders[l]
+            # recolor the pixels of the temp image based on their intensity values in the original image
+            temporary_image[image > quant_level_boundary] = quantization_levels[l]
+
+        images.append(temporary_image)
+
+        # Calculate the Mean Squared Error between rhe original image and the quantized image:
+        errors.append(np.sqrt((image - temporary_image) ** 2).mean())
+        # if the absolute difference between the last two elements in the errors array is less than 0.001, them converged.
+        if len(errors) > 1 and abs(errors[-2] - errors[-1]) < 0.001:
+            break
+
+    # Check if input image is RGB. If so, convert it from YIQ to RGB before added to the imaged list.
+    if isRGB:
+        for i in range(len(images)):
+            # normalize the luminance channel (Y) of YIQ image
+            imgYIQ[..., 0] = images[i] / 255
+            # convert the YIQ image back to RGB
+            images[i] = transformYIQ2RGB(imgYIQ)
+            # clip the RGB values of the current image to the range of [0,1].
+            images[i][images[i] > 1] = 1
+            images[i][images[i] < 0] = 0
+
+    return images, errors
+

@@ -18,7 +18,7 @@ LOAD_RGB = 2
 YIQ_MATRIX = np.array([[0.299, 0.587, 0.114], [0.596, -0.275, -0.321], [0.212, -0.523, 0.311]])
 
 
-def myID() -> np.int:
+def myID() -> int:
     """
     Return my ID (not the friend's ID I copied from)
     :return: int
@@ -49,8 +49,8 @@ def imDisplay(filename: str, representation: int):
     :param representation: GRAY_SCALE or RGB
     :return: None
     """
-    image = imReadAndConvert((filename, representation))
-    plt.show(image)
+    image = imReadAndConvert(filename, representation)
+    plt.imshow(image)
     if representation == LOAD_GRAY_SCALE:
         plt.gray()
     plt.show()
@@ -97,7 +97,7 @@ def hsitogramEqualize(imgOrig: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarra
     # Normalize the pixel values between 0 and 255
     image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX)
     # Round the normalized pixel values to the nearest integer
-    image = (np.around(image)).astype('unit8')
+    image = (np.around(image)).astype('uint8')
 
     # Calculating the image's histogram (range=[0,255]):
     # Flatten the original image to a 1d array
@@ -121,7 +121,7 @@ def hsitogramEqualize(imgOrig: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarra
     # Normalize cumulative sum
     cumulative_sum_normalized = cumulative_sum / cumulative_sum.max()
     # create a lookup table using normalized cumulative sum
-    look_up_table = (np.floor(cumulative_sum_normalized * 255)).astype('unit8')
+    look_up_table = (np.floor(cumulative_sum_normalized * 255)).astype('uint8')
 
     # Apply the intensity transformation to the input image:
     # Create an empty array for the equalized image
@@ -134,7 +134,7 @@ def hsitogramEqualize(imgOrig: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarra
     # normalize the equalized image
     image_equalized = cv2.normalize(image_equalized, None, 0, 255, cv2.NORM_MINMAX)
     # convert the equalized image to 8-bit integer type
-    image_equalized = (np.around(image_equalized)).astype('unit8')
+    image_equalized = (np.around(image_equalized)).astype('uint8')
     # flatten the equalized image
     image_equalized_flat = image_equalized.ravel()
     # create an empty array for the histogram of the equalized image
@@ -176,13 +176,12 @@ def quantizeImage(imOrig: np.ndarray, nQuant: int, nIter: int) -> (List[np.ndarr
 
     # Normalizing the pixels of image from [0,1] to [0,255]
     image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX)
-    image = image.astype('unit8')
+    image = image.astype('uint8')
     # Calculating the histogram of the image
     histogram, bins = np.histogram(image, 256, [0, 255])
 
     # Creating borders for quantization process:
-    borders = np.zeros(nQuant + 1, dtype=np.int)
-    borders_counter = 0;
+    borders = np.zeros(nQuant + 1, dtype=int)
     for i in range(nQuant + 1):
         borders[i] = i * (255.0 / nQuant)
     borders[-1] = 256
@@ -190,14 +189,14 @@ def quantizeImage(imOrig: np.ndarray, nQuant: int, nIter: int) -> (List[np.ndarr
     # Main loop:
     for i in range(nIter):
         # Create array to store the value of histogram counts for each border
-        quantization_levels = np.zeros(nQuant, dtype=int)  # q_array
+        quantization_levels = np.zeros(nQuant, dtype=int)
 
         # Calculate the value of histogram counts of pixel intensities within the border:
         for j in range(nQuant):
             # create an array containing the histogram counts for each pixel intensity
-            hist_counts = histogram[borders[j]:borders[j + 1]]  # q
+            hist_counts = histogram[borders[j]:borders[j + 1]]
             # create an array containing the pixel intensities
-            pixel_intensity_range = np.arange(int(borders[j]), int(borders[j + 1]))  # rng
+            pixel_intensity_range = np.arange(int(borders[j]), int(borders[j + 1]))
             quantization_levels[j] = (pixel_intensity_range * hist_counts).sum() / (hist_counts.sum().astype(int))
 
         # Recalculate the borders of the partitions based on the average of the quantization levels"

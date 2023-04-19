@@ -37,7 +37,9 @@ It is also checks that all the wanted functions were implemented as required.
 
 * **gamma.py** - This file contains a function that performs gamma correction in an image with a given gamma.
 
-* **swiss_boat.jpg** - A photo I took while traveling Switzerland, for testing purposes.
+* **testImg1.jpg** - A photo I took while traveling Switzerland, for testing purposes.
+
+* **testImg2.jpg** - A photo of colorful parrots.
 
 * **README.md** - My readme file.
 

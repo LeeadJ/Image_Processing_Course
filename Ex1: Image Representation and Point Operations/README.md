@@ -10,7 +10,6 @@
 
 
 
-
 ### About The Project
 The main purpose of the exercise was to get us acquainted with some of Python's image processing facilities. This exersice covers:
 - Loading grayscale and RGB image representations.

@@ -2,11 +2,11 @@
 
 
 ### Table of Content
-* [About The Project](About-The-Project)
-* [Software Information](Software-Information)
-* [Submission Files](Submission-Files)
-* [Functions](Functions)
-* [Screenshots](Screenshots)
+* [About The Project](#About-The-Project)
+* [Software Information](#Software-Information)
+* [Submission Files](#Submission-Files)
+* [Functions](#Functions)
+* [Screenshots](#Screenshots)
 
 
 

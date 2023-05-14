@@ -8,7 +8,7 @@ def myID() -> np.int:
     :return: int
     """
 
-    return 100
+    return 313308785
 
 def conv1D(in_signal: np.ndarray, k_size: np.ndarray) -> np.ndarray:
     """
@@ -17,8 +17,21 @@ def conv1D(in_signal: np.ndarray, k_size: np.ndarray) -> np.ndarray:
     :param k_size: 1-D array as a kernel
     :return: The convolved array
     """
+    # flip the kernel
+    flipped_kernel = np.flip(k_size)
 
-    return
+    # pad the kernel with zeros
+    padded_kernel = np.pad(flipped_kernel, (len(in_signal) - 1, len(in_signal) - 1), mode='constant')
+
+    # create vector to return
+    vector_return = np.zeros(len(in_signal) + len(flipped_kernel) - 1)
+
+    # preform the convolution
+    for i in range(len(vector_return)):
+        for j in range(len(in_signal)):
+            vector_return[i] += in_signal[-1 - j] * padded_kernel[-1 - i + j]
+
+    return vector_return
 
 
 def conv2D(in_image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
@@ -28,8 +41,28 @@ def conv2D(in_image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
     :param kernel: A kernel
     :return: The convolved image
     """
+    # Compute the dimensions of the input image and the kernel
+    rows, cols = in_image.shape
+    k_rows, k_cols = kernel.shape
 
-    return
+    # Compute the padding required to ensure that the output image has the same size as the input image
+    pad_rows = k_rows // 2
+    pad_cols = k_cols // 2
+
+    # Create a padded version of the input image
+    padded_image = np.zeros((rows + 2 * pad_rows, cols + 2 * pad_cols))
+    padded_image[pad_rows: pad_rows + rows, pad_cols: pad_cols + cols] = in_image
+
+    # Create an output image
+    out_image = np.zeros((rows, cols))
+
+    # Convolve the input image with the kernel
+    for i in range(pad_rows, rows + pad_rows):
+        for j in range(pad_cols, cols + pad_cols):
+            sub_image = padded_image[i - pad_rows: i + pad_rows + 1, j - pad_cols: j + pad_cols + 1]
+            out_image[i - pad_rows, j - pad_cols] = np.sum(sub_image * kernel)
+
+    return out_image
 
 
 def convDerivative(in_image: np.ndarray) -> (np.ndarray, np.ndarray):

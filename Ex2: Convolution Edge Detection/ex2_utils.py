@@ -140,15 +140,8 @@ def edgeDetectionZeroCrossingSimple(img: np.ndarray) -> np.ndarray:
     :return: Edge matrix
     """
 
-    # Check if the image is already grayscale
-    if len(img.shape) == 2:
-        gray = img
-    else:
-        # Convert the image to grayscale
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
     # Apply Laplacian filter
-    laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+    laplacian = cv2.Laplacian(img, cv2.CV_64F)
 
     # Find zero crossings
     rows, cols = laplacian.shape
@@ -169,18 +162,8 @@ def edgeDetectionZeroCrossingLOG(img: np.ndarray) -> np.ndarray:
     :return: Edge matrix
     """
 
-    # Check if the image is already grayscale
-    if len(img.shape) == 2:
-        gray = img
-    else:
-        # Apply Gaussian blur
-        blurred = cv2.GaussianBlur(img, (5, 5), 0)
-
-        # Convert the blurred image to grayscale
-        gray = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
-
     # Apply Laplacian filter
-    laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+    laplacian = cv2.Laplacian(img, cv2.CV_64F)
 
     # Find zero crossings
     rows, cols = laplacian.shape
@@ -197,15 +180,33 @@ def edgeDetectionZeroCrossingLOG(img: np.ndarray) -> np.ndarray:
 def houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list:
     """
     Find Circles in an image using a Hough Transform algorithm extension
-    To find Edges you can Use OpenCV function: cv2.Canny
+    To find Edges you can Use Open CV function: cv.Canny
     :param img: Input image
     :param min_radius: Minimum circle radius
     :param max_radius: Maximum circle radius
     :return: A list containing the detected circles,
-                [(x,y,radius),(x,y,radius),...]
+    [(x,y,radius),(x,y,radius),...]
     """
+    # Convert the image to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    return
+    # Apply Canny edge detection
+    edges = cv2.Canny(gray, 50, 150)
+
+    # Apply Hough circles transform
+    circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, 20,
+                               param1=50, param2=30,
+                               minRadius=min_radius, maxRadius=max_radius)
+
+    # Process the detected circles
+    detected_circles = []
+    if circles is not None:
+        circles = np.round(circles[0, :]).astype(int)
+        for circle in circles:
+            x, y, radius = circle
+            detected_circles.append((x, y, radius))
+
+    return detected_circles
 
 
 def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: float, sigma_space: float) -> (

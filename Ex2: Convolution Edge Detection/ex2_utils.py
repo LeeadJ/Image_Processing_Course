@@ -71,8 +71,22 @@ def convDerivative(in_image: np.ndarray) -> (np.ndarray, np.ndarray):
     :param in_image: Grayscale iamge
     :return: (directions, magnitude)
     """
+    # Define the convolution kernels for x and y derivatives
+    kernel = np.array([[1, 0, -1]])
 
-    return
+    # Compute x-derivative using convolution with the kernel
+    G_X = cv2.filter2D(in_image, -1, kernel)
+    # Compute y-derivative using convolution with the transposed kernel
+    G_Y = cv2.filter2D(in_image, -1, kernel.T)
+
+    # Compute magnitude of the gradient using element-wise operations
+    magnitude = np.sqrt(G_X ** 2 + G_Y ** 2).astype(np.float64)
+
+    # Compute direction of the gradient using element-wise arctangent
+    direction = np.arctan2(G_Y, G_X).astype(np.float64)
+
+    # Return the direction and magnitude matrices as a tuple
+    return direction, magnitude
 
 
 def blurImage1(in_image: np.ndarray, k_size: int) -> np.ndarray:
@@ -83,7 +97,22 @@ def blurImage1(in_image: np.ndarray, k_size: int) -> np.ndarray:
     :return: The Blurred image
     """
 
-    return
+    # Create a 1D Gaussian kernel using binomial coefficients
+    kernel_1d = np.array([1, 1], dtype=np.float32)
+    for _ in range(k_size - 2):
+        kernel_1d = np.convolve(kernel_1d, [1, 1])
+    kernel_1d = kernel_1d.reshape(1, -1)  # Convert to row vector
+
+    # Create a 2D Gaussian kernel by convolving the 1D kernel with its transpose
+    kernel_2d = np.matmul(kernel_1d.T, kernel_1d)
+
+    # Normalize the kernel
+    kernel_2d /= np.sum(kernel_2d)
+
+    # Perform convolution between the image and the Gaussian kernel
+    blurred_image = conv2D(in_image, kernel_2d)
+
+    return blurred_image
 
 
 def blurImage2(in_image: np.ndarray, k_size: int) -> np.ndarray:
@@ -94,7 +123,14 @@ def blurImage2(in_image: np.ndarray, k_size: int) -> np.ndarray:
     :return: The Blurred image
     """
 
-    return
+    # Create a 2D Gaussian kernel using OpenCV's built-in function
+    kernel_2d = cv2.getGaussianKernel(k_size, -1)
+    kernel_2d = np.matmul(kernel_2d, kernel_2d.T)
+
+    # Perform convolution between the image and the Gaussian kernel using OpenCV's filter2D function
+    blurred_image = cv2.filter2D(in_image, -1, kernel_2d, borderType=cv2.BORDER_REPLICATE)
+
+    return blurred_image
 
 
 def edgeDetectionZeroCrossingSimple(img: np.ndarray) -> np.ndarray:
@@ -104,7 +140,26 @@ def edgeDetectionZeroCrossingSimple(img: np.ndarray) -> np.ndarray:
     :return: Edge matrix
     """
 
-    return
+    # Check if the image is already grayscale
+    if len(img.shape) == 2:
+        gray = img
+    else:
+        # Convert the image to grayscale
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Apply Laplacian filter
+    laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+
+    # Find zero crossings
+    rows, cols = laplacian.shape
+    edge_matrix = np.zeros_like(laplacian, dtype=np.uint8)
+    for i in range(1, rows - 1):
+        for j in range(1, cols - 1):
+            neighbors = [laplacian[i - 1, j], laplacian[i + 1, j], laplacian[i, j - 1], laplacian[i, j + 1]]
+            if np.any(np.diff(np.sign(neighbors))):
+                edge_matrix[i, j] = 255
+
+    return edge_matrix
 
 
 def edgeDetectionZeroCrossingLOG(img: np.ndarray) -> np.ndarray:
@@ -114,7 +169,29 @@ def edgeDetectionZeroCrossingLOG(img: np.ndarray) -> np.ndarray:
     :return: Edge matrix
     """
 
-    return
+    # Check if the image is already grayscale
+    if len(img.shape) == 2:
+        gray = img
+    else:
+        # Apply Gaussian blur
+        blurred = cv2.GaussianBlur(img, (5, 5), 0)
+
+        # Convert the blurred image to grayscale
+        gray = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
+
+    # Apply Laplacian filter
+    laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+
+    # Find zero crossings
+    rows, cols = laplacian.shape
+    edge_matrix = np.zeros_like(laplacian, dtype=np.uint8)
+    for i in range(1, rows - 1):
+        for j in range(1, cols - 1):
+            neighbors = [laplacian[i - 1, j], laplacian[i + 1, j], laplacian[i, j - 1], laplacian[i, j + 1]]
+            if np.any(np.diff(np.sign(neighbors))):
+                edge_matrix[i, j] = 255
+
+    return edge_matrix
 
 
 def houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list:

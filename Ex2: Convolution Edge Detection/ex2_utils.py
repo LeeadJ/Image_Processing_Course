@@ -187,11 +187,10 @@ def houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list:
     :return: A list containing the detected circles,
     [(x,y,radius),(x,y,radius),...]
     """
-    # Convert the image to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
+    # Convert img to 8-bit unsigned int
+    img = cv2.convertScaleAbs(img)
     # Apply Canny edge detection
-    edges = cv2.Canny(gray, 50, 150)
+    edges = cv2.Canny(img, 50, 150)
 
     # Apply Hough circles transform
     circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, 1, 20,
@@ -218,5 +217,39 @@ def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: f
     :param sigma_space: represents the filter sigma in the coordinate.
     :return: OpenCV implementation, my implementation
     """
+    # Apply OpenCV implementation
+    opencv_filtered = cv2.bilateralFilter(in_image, k_size, sigma_color, sigma_space)
 
-    return
+    # Create a blank image to store the result of our implementation
+    my_filtered = np.zeros_like(in_image)
+
+    # Calculate the padding size for the image
+    padding = int(k_size / 2)
+
+    # Pad the image
+    padded_image = cv2.copyMakeBorder(in_image, padding, padding, padding, padding,
+                                      cv2.BORDER_REPLICATE, None, value=0)
+
+    # Iterate over each pixel in the image
+    for y in range(padding, padded_image.shape[0] - padding):
+        for x in range(padding, padded_image.shape[1] - padding):
+            center = padded_image[y, x]
+            neighborhood = padded_image[y - padding:y + padding + 1, x - padding:x + padding + 1]
+
+            # Calculate the Gaussian weights for the color and spatial differences
+            color_diff = neighborhood.astype(int) - center
+            color_weights = np.exp(-np.power(color_diff, 2) / (2 * sigma_color))
+            spatial_diff = np.sqrt((np.arange(2 * padding + 1) - padding) ** 2)
+            spatial_weights = np.exp(-np.power(spatial_diff, 2) / (2 * sigma_space))
+
+            # Combine the color and spatial weights
+            weights = spatial_weights[:, np.newaxis] * color_weights
+            weights /= weights.sum()
+
+            # Calculate the filtered value for the current pixel
+            filtered_value = (weights * neighborhood).sum()
+
+            # Store the filtered value in the result image
+            my_filtered[y - padding, x - padding] = round(filtered_value)
+
+    return opencv_filtered, my_filtered

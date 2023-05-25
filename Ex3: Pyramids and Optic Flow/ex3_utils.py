@@ -12,7 +12,7 @@ def myID() -> np.int:
     Return my ID (not the friend's ID I copied from)
     :return: int
     """
-    return 100
+    return 313308785
 
 # ---------------------------------------------------------------------------
 # ------------------------ Lucas Kanade optical flow ------------------------

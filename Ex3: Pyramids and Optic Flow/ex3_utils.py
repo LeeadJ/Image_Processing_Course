@@ -96,7 +96,45 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     :return: A 3d array, with a shape of (m, n, 2),
     where the first channel holds U, and the second V.
     """
-    pass
+    img1_pyr = gaussianPyr(img1, k)
+    img2_pyr = gaussianPyr(img2, k)
+
+    xy_prev, uv_prev = opticalFlow(img1_pyr[-1], img2_pyr[-1], stepSize, winSize)
+    xy_prev = xy_prev.tolist()
+    uv_prev = uv_prev.tolist()
+
+    for i in range(1, k):
+        xy_i, uv_i = opticalFlow(img1_pyr[-1 - i], img2_pyr[-1 - i], stepSize, winSize)
+        xy_i = xy_i.tolist()
+        uv_i = uv_i.tolist()
+
+        for j in range(len(xy_i)):
+            xy_i[j] = xy_i[j].tolist()
+
+        for j in range(len(xy_prev)):
+            xy_prev[j] = [element * 2 for element in xy_prev[j]]
+            uv_prev[j] = [element * 2 for element in uv_prev[j]]
+
+        for j in range(len(xy_i)):
+            if xy_i[j] in xy_prev:
+                uv_prev[j] += uv_i[j]
+            else:
+                xy_prev.append(xy_i[j])
+                uv_prev.append(uv_i[j])
+
+    flow_matrix = np.zeros(shape=(img1.shape[0], img1.shape[1], 2))
+
+    for x in range(img1.shape[0]):
+        for y in range(img1.shape[1]):
+            if [y, x] not in xy_prev:
+                flow_matrix[x, y] = [0, 0]
+            else:
+                flow_matrix[x, y] = uv_prev[xy_prev.index([y, x])]
+
+    if flow_matrix is None:
+        return np.zeros(shape=(img1.shape[0], img1.shape[1], 2))  # Return empty flow matrix as fallback
+
+    return flow_matrix
 
 
 # ---------------------------------------------------------------------------

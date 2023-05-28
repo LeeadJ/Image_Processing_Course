@@ -35,7 +35,39 @@ def hierarchicalkDemo(img_path):
     """
     print("Hierarchical LK Demo")
 
-    pass
+    # Load and preprocess images
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    img_1 = cv2.resize(img_1, (0, 0), fx=0.5, fy=0.5)
+    t = np.array([[1, 0, -0.2],
+                  [0, 1, -0.1],
+                  [0, 0, 1]], dtype=np.float)
+    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+
+    # Compute optical flow
+    st = time.time()
+    arr3d = opticalFlowPyrLK(img_1.astype(np.float), img_2.astype(np.float), stepSize=20, winSize=5, k=5)
+
+    # Extract relevant points and vectors
+    pts = []
+    uv = []
+    for x in range(len(arr3d)):
+        for y in range(len(arr3d[0])):
+            if np.any(arr3d[x, y] != 0):
+                pts.append([y, x])
+                uv.append(arr3d[x, y])
+
+    pts = np.array(pts)
+    uv = np.array(uv)
+
+    et = time.time()
+
+    # Print statistics
+    print("Time: {:.4f}".format(et - st))
+    print(np.median(uv, 0))
+    print(np.mean(uv, 0))
+
+    # Display optical flow
+    displayOpticalFlow(img_2, pts, uv)
 
 
 def compareLK(img_path):
@@ -146,15 +178,15 @@ def main():
     print("ID:", myID())
 
     img_path = 'input/boxMan.jpg'
-    lkDemo(img_path)
+    # lkDemo(img_path)
     hierarchicalkDemo(img_path)
-    compareLK(img_path)
-
-    imageWarpingDemo(img_path)
-
-    pyrGaussianDemo('input/pyr_bit.jpg')
-    pyrLaplacianDemo('input/pyr_bit.jpg')
-    blendDemo()
+    # compareLK(img_path)
+    #
+    # imageWarpingDemo(img_path)
+    #
+    # pyrGaussianDemo('input/pyr_bit.jpg')
+    # pyrLaplacianDemo('input/pyr_bit.jpg')
+    # blendDemo()
 
 
 if __name__ == '__main__':

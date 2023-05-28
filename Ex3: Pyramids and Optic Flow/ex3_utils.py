@@ -29,60 +29,73 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     :param win_size: The optical flow window size (odd number)
     :return: Original points [[x,y]...], [[dU,dV]...] for each points
     """
-    # Convert images to grayscale if they are not already
+    # If the image is not grayscale, convert it to grayscale
     if len(im1.shape) > 2:
         im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
     if len(im2.shape) > 2:
         im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
 
-    # Compute derivatives in the x and y directions
-    vector = np.array([[1, 0, -1]])
-    I_X = cv2.filter2D(im2, -1, vector, borderType=cv2.BORDER_REPLICATE)
-    I_Y = cv2.filter2D(im2, -1, vector.T, borderType=cv2.BORDER_REPLICATE)
+    # Compute the derivatives in x and y directions
+    derivative_filter = np.array([[1, 0, -1]])
+    I_X = cv2.filter2D(im2, -1, derivative_filter, borderType=cv2.BORDER_REPLICATE)
+    I_Y = cv2.filter2D(im2, -1, derivative_filter.T, borderType=cv2.BORDER_REPLICATE)
     I_T = im2 - im1
 
-    u_v = []  # Optical flow vectors
-    x_y = []  # Corresponding points
+    # Initialize arrays to store the calculated velocities and corresponding points
+    velocities = []
+    points = []
 
-    # Iterate over image pixels
-    for i in range(win_size // 2, im1.shape[0], step_size):
-        for j in range(win_size // 2, im1.shape[1], step_size):
-            # Create a local sample region
+    for i in range(step_size, im1.shape[0], step_size):
+        for j in range(step_size, im1.shape[1], step_size):
+            # Create a small sample of I_X, I_Y, and I_T for the current window
             sample_I_X = I_X[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
             sample_I_Y = I_Y[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
             sample_I_T = I_T[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
 
-            # Flatten the sample
+            # Flatten the sample arrays since they will be treated as vectors
             sample_I_X = sample_I_X.flatten()
             sample_I_Y = sample_I_Y.flatten()
             sample_I_T = sample_I_T.flatten()
 
-            # Calculate matrices A and B
+            # Size of the samples
             n = len(sample_I_X)
-            A = np.array([[np.sum(sample_I_X ** 2), np.sum(sample_I_X * sample_I_Y)],
-                          [np.sum(sample_I_X * sample_I_Y), np.sum(sample_I_Y ** 2)]])
-            B = np.array([[-np.sum(sample_I_X * sample_I_T)],
-                          [-np.sum(sample_I_Y * sample_I_T)]])
 
-            # Compute eigenvalues
+            # Calculate matrices (A^tA)^-1 and A^tB
+            sum_IX_squared = sum(sample_I_X[h] ** 2 for h in range(n))
+            sum_IX_IY = sum(sample_I_X[h] * sample_I_Y[h] for h in range(n))
+            sum_IY_squared = sum(sample_I_Y[h] ** 2 for h in range(n))
+
+            sum_IX_IT = sum(sample_I_X[h] * sample_I_T[h] for h in range(n))
+            sum_IY_IT = sum(sample_I_Y[h] * sample_I_T[h] for h in range(n))
+
+            # Enter the calculated values into a 2x2 matrix
+            A = np.array([[sum_IX_squared, sum_IX_IY], [sum_IX_IY, sum_IY_squared]])
+            B = np.array([[-sum_IX_IT], [-sum_IY_IT]])
+
+            # Get eigenvalues and eigenvectors
             eigen_val, eigen_vec = np.linalg.eig(A)
-            eig_val1, eig_val2 = eigen_val[0], eigen_val[1]
+            eig_val1 = eigen_val[0]
+            eig_val2 = eigen_val[1]
 
-            # Check eigenvalue conditions
+            # Ensure eigenvalues satisfy the conditions
             if eig_val1 < eig_val2:
-                eig_val1, eig_val2 = eig_val2, eig_val1
+                temp = eig_val1
+                eig_val1 = eig_val2
+                eig_val2 = temp
 
+            # Condition 2: If it holds, add the point
             if eig_val2 <= 1 or eig_val1 / eig_val2 >= 100:
                 continue
 
-            # Calculate u and v
+            # Calculate u and v components of velocity
             vector_u_v = np.linalg.inv(A) @ B
-            u, v = vector_u_v[0][0], vector_u_v[1][0]
+            u = vector_u_v[0][0]
+            v = vector_u_v[1][0]
 
-            x_y.append([j, i])
-            u_v.append([u, v])
+            points.append([j, i])
+            velocities.append([u, v])
 
-    return np.array(x_y), np.array(u_v)
+    return np.array(points), np.array(velocities)
 
 
 def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,

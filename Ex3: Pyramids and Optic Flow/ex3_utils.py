@@ -412,5 +412,88 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,
     :param levels: Pyramid depth
     :return: (Naive blend, Blended Image)
     """
-    pass
+    # Crop images and mask to a size compatible with the pyramid levels
+    crop_size = np.power(2, levels)
+    img_1 = crop_image(img_1, crop_size)
+    img_2 = crop_image(img_2, crop_size)
+    mask = crop_image(mask, crop_size)
 
+    # Initialize the blended image
+    im_blend = np.zeros(img_1.shape)
+
+    # Check if the image is RGB
+    if img_1.ndim > 2 or img_2.ndim > 2:
+        # Perform blending for each channel separately
+        for channel in range(3):
+            part_im1 = img_1[:, :, channel]
+            part_im2 = img_2[:, :, channel]
+            part_mask = mask[:, :, channel]
+
+            # Generate Gaussian pyramid for image 1
+            gauss_pyr_1 = gaussianPyr(part_im1, levels)
+
+            # Generate Gaussian pyramid for image 2
+            gauss_pyr_2 = gaussianPyr(part_im2, levels)
+
+            # Generate Laplacian pyramid for image 1
+            lap_pyr_1 = laplaceianReduce(part_im1, levels)
+
+            # Generate Laplacian pyramid for image 2
+            lap_pyr_2 = laplaceianReduce(part_im2, levels)
+
+            # Generate Gaussian pyramid for the mask
+            gauss_pyr_mask = gaussianPyr(part_mask, levels)
+
+            lp_ret = []
+            for i in range(levels):
+                # Ensure the images and mask have compatible dimensions at each pyramid level
+                img_shape = gauss_pyr_mask[i].shape
+                lap_pyr_1[i] = crop_image(lap_pyr_1[i], img_shape[1])
+                lap_pyr_2[i] = crop_image(lap_pyr_2[i], img_shape[1])
+                gauss_pyr_mask[i] = crop_image(gauss_pyr_mask[i], img_shape[1])
+
+                curr_lap = gauss_pyr_mask[i] * lap_pyr_1[i] + (1 - gauss_pyr_mask[i]) * lap_pyr_2[i]
+                lp_ret.append(curr_lap)
+            im_blend[:, :, channel] = laplaceianExpand(lp_ret)
+
+    else:
+        # Perform blending for grayscale image
+        # Generate Gaussian pyramid for image 1
+        gauss_pyr_1 = gaussianPyr(img_1, levels)
+
+        # Generate Gaussian pyramid for image 2
+        gauss_pyr_2 = gaussianPyr(img_2, levels)
+
+        # Generate Laplacian pyramid for image 1
+        lap_pyr_1 = laplaceianReduce(img_1, levels)
+
+        # Generate Laplacian pyramid for image 2
+        lap_pyr_2 = laplaceianReduce(img_2, levels)
+
+        # Generate Gaussian pyramid for the mask
+        gauss_pyr_mask = gaussianPyr(mask, levels)
+
+        lp_ret = []
+        for i in range(levels):
+            # Ensure the images and mask have compatible dimensions at each pyramid level
+            img_shape = gauss_pyr_mask[i].shape
+            lap_pyr_1[i] = crop_image(lap_pyr_1[i], img_shape[1])
+            lap_pyr_2[i] = crop_image(lap_pyr_2[i], img_shape[1])
+            gauss_pyr_mask[i] = crop_image(gauss_pyr_mask[i], img_shape[1])
+
+            curr_lap = gauss_pyr_mask[i] * lap_pyr_1[i] + (1 - gauss_pyr_mask[i]) * lap_pyr_2[i]
+            lp_ret.append(curr_lap)
+        im_blend = laplaceianExpand(lp_ret)
+
+    # Naive blend without using pyramid
+    naive_blend = mask * img_1 + (1 - mask) * img_2
+
+    return naive_blend, im_blend
+
+def crop_image(img: np.ndarray, target_size: int) -> np.ndarray:
+    height, width = img.shape[:2]
+    new_height = min(height, target_size)
+    new_width = min(width, target_size)
+    start_height = (height - new_height) // 2
+    start_width = (width - new_width) // 2
+    return img[start_height:start_height+new_height, start_width:start_width+new_width]

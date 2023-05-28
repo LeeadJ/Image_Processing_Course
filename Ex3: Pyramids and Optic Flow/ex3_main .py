@@ -276,9 +276,36 @@ def imageWarpingDemo(img_path):
     :param img_path: Image input
     :return:
     """
-    print("Image Warping Demo")
+    print("Image Warping Demo - START")
 
-    pass
+    # Read and preprocess the input image
+    input_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    input_image = cv2.resize(input_image, (0, 0), fx=0.5, fy=0.5)
+
+    # Define the transformation matrix
+    transformation_matrix = np.array([[0.9, 0, 0],
+                                      [0, 0.9, 0],
+                                      [0, 0, 1]], dtype=np.float)
+
+    # Apply the predefined transformation matrix to the input image using cv2.warpPerspective
+    warped_image_cv2 = cv2.warpPerspective(input_image, transformation_matrix, input_image.shape[::-1])
+
+    # Apply the predefined transformation matrix to the input image using a custom function
+    warped_image_custom = warpImages(input_image, warped_image_cv2, transformation_matrix)
+
+    # Display the original photo, warped image from cv2, and the custom inverse warp
+    fig, ax = plt.subplots(1, 3)
+    ax[0].imshow(input_image, cmap='gray')
+    ax[0].set_title('Original Photo')
+    ax[1].imshow(warped_image_cv2, cmap='gray')
+    ax[1].set_title('Warped Image (cv2)')
+    ax[2].imshow(warped_image_custom, cmap='gray')
+    ax[2].set_title('Custom Inverse Warp')
+    plt.show()
+
+    cv2.waitKey(0)
+
+    print("Image Warping Demo - END")
 
 
 # ---------------------------------------------------------------------------
@@ -401,20 +428,17 @@ def main():
     # compareLK(img_path)
 
     # Translation Comparison
-    # img_path = 'input/japan.jpg'
-    # compare_translation_lk(img_path)
+    # compare_translation_lk('input/japan.jpg')
 
     # Translation Correlation
-    # img_path = 'input/shrekArt.jpg'
-    # translation_correlation(img_path)
+    # translation_correlation('input/shrekArt.jpg')
 
     # Rigid
-    # img_path = 'input/maldives.jpg'
-    # rigid_lk(img_path)
+    # rigid_lk('input/maldives.jpg')
+    # rigid_correlation('input/tigerArt.jpg')
 
-    img_path = 'input/tigerArt.jpg'
-    rigid_correlation(img_path)
-    # imageWarpingDemo(img_path)
+    # Image Warping
+    imageWarpingDemo(img_path)
 
     # pyrGaussianDemo('input/pyr_bit.jpg')
     # pyrLaplacianDemo('input/pyr_bit.jpg')

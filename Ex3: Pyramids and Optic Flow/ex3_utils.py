@@ -279,7 +279,18 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
     :return: warp image 2 according to T and display both image1
     and the wrapped version of the image2 in the same figure.
     """
-    pass
+    # Apply the transformation matrix T to image2 using cv2.warpPerspective
+    warped_image = cv2.warpPerspective(im2, T, im1.shape[::-1])
+
+    # Display both image1 and the warped image2 in the same figure
+    fig, ax = plt.subplots(1, 2)
+    ax[0].imshow(im1, cmap='gray')
+    ax[0].set_title('Image 1')
+    ax[1].imshow(warped_image, cmap='gray')
+    ax[1].set_title('Warped Image 2')
+    plt.show()
+
+    return warped_image
 
 
 # ---------------------------------------------------------------------------

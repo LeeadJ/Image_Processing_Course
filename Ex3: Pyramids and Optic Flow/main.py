@@ -123,7 +123,7 @@ def TranslationLK(img_path):
     print("translation LK")
     img_path = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_path = cv2.resize(img_path, (0, 0), fx=.5, fy=0.5)
-    cv2.imwrite('imTransA1.jpg', cv2.cvtColor(img_path.astype(np.uint8), cv2.COLOR_RGB2BGR))
+    cv2.imwrite('input/tigerArt.jpg', cv2.cvtColor(img_path.astype(np.uint8), cv2.COLOR_RGB2BGR))
     t = np.array([[1, 0, -5],
                   [0, 1, -5],
                   [0, 0, 1]], dtype=np.float)
@@ -146,7 +146,7 @@ def TranslationCorrelation(img_path):
     print("translation correlation")
     img_path = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_path = cv2.resize(img_path, (0, 0), fx=.5, fy=0.5)
-    cv2.imwrite('imTransB1.jpg', cv2.cvtColor((img_path).astype(np.uint8), cv2.COLOR_RGB2BGR))
+    cv2.imwrite('input/shrekArt.jpg', cv2.cvtColor((img_path).astype(np.uint8), cv2.COLOR_RGB2BGR))
     t = np.array([[1, 0, -20],
                   [0, 1, -20],
                   [0, 0, 1]], dtype=np.float)
@@ -174,7 +174,7 @@ def RigidLK(img_path):
 
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    cv2.imwrite('imRigidA1.jpg', cv2.cvtColor((img_1).astype(np.uint8), cv2.COLOR_RGB2BGR))
+    cv2.imwrite('input/maldives.jpg', cv2.cvtColor((img_1).astype(np.uint8), cv2.COLOR_RGB2BGR))
     t = np.array([[np.cos(np.radians(0.6)), -np.sin(np.radians(0.6)), -0.5],
                   [np.sin(np.radians(0.6)), np.cos(np.radians(0.6)), -0.5],
                   [0.0, 0.0, 1.0]], dtype=np.float)
@@ -203,7 +203,7 @@ def RigidCorrelation(img_path):
 
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    cv2.imwrite('imRigidB1.jpg', cv2.cvtColor((img_1).astype(np.uint8), cv2.COLOR_RGB2BGR))
+    cv2.imwrite('input/japan.jpg', cv2.cvtColor((img_1).astype(np.uint8), cv2.COLOR_RGB2BGR))
     t = np.array([[np.cos(np.radians(0.6)), -np.sin(np.radians(0.6)), 5],
                   [np.sin(np.radians(0.6)), np.cos(np.radians(0.6)), 6],
                   [0.0, 0.0, 1.0]], dtype=np.float)

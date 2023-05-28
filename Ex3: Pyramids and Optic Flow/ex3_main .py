@@ -78,9 +78,29 @@ def compareLK(img_path):
     :param img_path: Image input
     :return:
     """
-    print("Compare LK & Hierarchical LK")
+    print("Compare LK & Hierarchical LK - START")
 
-    pass
+    # Load and preprocess the images
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    img_1 = cv2.resize(img_1, (0, 0), fx=0.5, fy=0.5)
+
+    # Generate the transformed image
+    transformation = np.array([[1, 0, -0.2],
+                               [0, 1, -0.1],
+                               [0, 0, 1]], dtype=np.float)
+    img_2 = cv2.warpPerspective(img_1, transformation, img_1.shape[::-1])
+
+    # Compute optical flow using Lucas-Kanade method
+    pts1, uv1 = opticalFlow(img_1.astype(np.float), img_2.astype(np.float), step_size=20, win_size=5)
+
+    # Compute optical flow using Pyramidal Lucas-Kanade method
+    arr3d = opticalFlowPyrLK(img_1.astype(np.float), img_2.astype(np.float), stepSize=20, winSize=5, k=5)
+    pts2, uv2 = convert_3d_array_to_points(arr3d)
+
+    # Display the optical flow results
+    display_optical_flow_comparison(img_2, pts1, uv1, img_2, pts2, uv2)
+
+    print("Compare LK & Hierarchical LK - END")
 
 
 def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
@@ -189,14 +209,42 @@ def convert_3d_array_to_points(mat: np.ndarray) -> (np.ndarray, np.ndarray):
                 u_x_return.append(dummy)
     return np.array(x_y_return), np.array(u_x_return)
 
+
+def display_optical_flow_comparison(img1: np.ndarray, pts1: np.ndarray, uvs1: np.ndarray,
+                                    img2: np.ndarray, pts2: np.ndarray, uvs2: np.ndarray):
+    """
+    Display a comparison of optical flow results for two images.
+    :param img1: First input image
+    :param pts1: Points in the first image
+    :param uvs1: Optical flow vectors in the first image
+    :param img2: Second input image
+    :param pts2: Points in the second image
+    :param uvs2: Optical flow vectors in the second image
+    :return: None
+    """
+    fig, axes = plt.subplots(1, 2)
+
+    # Display optical flow for first image
+    axes[0].imshow(img1, cmap='gray')
+    axes[0].quiver(pts1[:, 0], pts1[:, 1], uvs1[:, 0], uvs1[:, 1], color='r')
+    axes[0].set_title('Optical Flow (Lucas-Kanade)')
+
+    # Display optical flow for second image
+    axes[1].imshow(img2, cmap='gray')
+    axes[1].quiver(pts2[:, 0], pts2[:, 1], uvs2[:, 0], uvs2[:, 1], color='r')
+    axes[1].set_title('Optical Flow (Hierarchical Lucas-Kanade)')
+
+    plt.show()
+
+
 def main():
     print("ID:", myID())
 
     img_path = 'input/boxMan.jpg'
-    lkDemo(img_path)
-    hierarchicalkDemo(img_path)
-    # compareLK(img_path)
-    #
+    # lkDemo(img_path)
+    # hierarchicalkDemo(img_path)
+    compareLK(img_path)
+
     # imageWarpingDemo(img_path)
     #
     # pyrGaussianDemo('input/pyr_bit.jpg')

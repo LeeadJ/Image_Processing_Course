@@ -29,7 +29,60 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     :param win_size: The optical flow window size (odd number)
     :return: Original points [[x,y]...], [[dU,dV]...] for each points
     """
-    pass
+    # Convert images to grayscale if they are not already
+    if len(im1.shape) > 2:
+        im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+    if len(im2.shape) > 2:
+        im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+
+    # Compute derivatives in the x and y directions
+    vector = np.array([[1, 0, -1]])
+    I_X = cv2.filter2D(im2, -1, vector, borderType=cv2.BORDER_REPLICATE)
+    I_Y = cv2.filter2D(im2, -1, vector.T, borderType=cv2.BORDER_REPLICATE)
+    I_T = im2 - im1
+
+    u_v = []  # Optical flow vectors
+    x_y = []  # Corresponding points
+
+    # Iterate over image pixels
+    for i in range(win_size // 2, im1.shape[0], step_size):
+        for j in range(win_size // 2, im1.shape[1], step_size):
+            # Create a local sample region
+            sample_I_X = I_X[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
+            sample_I_Y = I_Y[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
+            sample_I_T = I_T[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
+
+            # Flatten the sample
+            sample_I_X = sample_I_X.flatten()
+            sample_I_Y = sample_I_Y.flatten()
+            sample_I_T = sample_I_T.flatten()
+
+            # Calculate matrices A and B
+            n = len(sample_I_X)
+            A = np.array([[np.sum(sample_I_X ** 2), np.sum(sample_I_X * sample_I_Y)],
+                          [np.sum(sample_I_X * sample_I_Y), np.sum(sample_I_Y ** 2)]])
+            B = np.array([[-np.sum(sample_I_X * sample_I_T)],
+                          [-np.sum(sample_I_Y * sample_I_T)]])
+
+            # Compute eigenvalues
+            eigen_val, eigen_vec = np.linalg.eig(A)
+            eig_val1, eig_val2 = eigen_val[0], eigen_val[1]
+
+            # Check eigenvalue conditions
+            if eig_val1 < eig_val2:
+                eig_val1, eig_val2 = eig_val2, eig_val1
+
+            if eig_val2 <= 1 or eig_val1 / eig_val2 >= 100:
+                continue
+
+            # Calculate u and v
+            vector_u_v = np.linalg.inv(A) @ B
+            u, v = vector_u_v[0][0], vector_u_v[1][0]
+
+            x_y.append([j, i])
+            u_v.append([u, v])
+
+    return np.array(x_y), np.array(u_v)
 
 
 def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,

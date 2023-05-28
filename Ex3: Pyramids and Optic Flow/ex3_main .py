@@ -438,9 +438,9 @@ def main():
     # rigid_correlation('input/tigerArt.jpg')
 
     # Image Warping
-    imageWarpingDemo(img_path)
+    # imageWarpingDemo(img_path)
 
-    # pyrGaussianDemo('input/pyr_bit.jpg')
+    pyrGaussianDemo('input/pyr_bit.jpg')
     # pyrLaplacianDemo('input/pyr_bit.jpg')
     # blendDemo()
 

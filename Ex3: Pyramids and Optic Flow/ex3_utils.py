@@ -243,7 +243,31 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :return: Rigid matrix by correlation.
     """
 
-    pass
+    # Convert images to grayscale if necessary
+    if len(im1.shape) > 2:
+        im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+    if len(im2.shape) > 2:
+        im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+
+    # Compute the correlation using matchTemplate
+    result = cv2.matchTemplate(im1, im2, cv2.TM_CCORR_NORMED)
+
+    # Find the location of the best match
+    _, _, _, max_loc = cv2.minMaxLoc(result)
+
+    # Calculate the rigid matrix
+    dx = max_loc[0] - im1.shape[1]
+    dy = max_loc[1] - im1.shape[0]
+    theta = 0  # Assuming no rotation for now
+
+    cos_theta = np.cos(theta)
+    sin_theta = np.sin(theta)
+
+    rigid_matrix = np.array([[cos_theta, -sin_theta, dx],
+                             [sin_theta, cos_theta, dy],
+                             [0.0, 0.0, 1.0]], dtype=np.float32)
+
+    return rigid_matrix
 
 
 def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:

@@ -228,6 +228,48 @@ def rigid_lk(image_path):
     cv2.waitKey(0)
 
     print("Rigid LK - END")
+
+def rigid_correlation(image_path):
+    """
+    Compare the results of rigid transformation using correlation and RigidCorr methods.
+    :param image_path: Input image path.
+    :return:
+    """
+    print("Rigid Correlation - START")
+
+    # Read and preprocess the input image
+    image1 = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2GRAY)
+    image1 = cv2.resize(image1, (0, 0), fx=2.5, fy=2.5)
+    cv2.imwrite('imRigidB1.jpg', cv2.cvtColor(image1.astype(np.uint8), cv2.COLOR_GRAY2BGR))
+
+    # Define rigid transformation matrix
+    theta = np.radians(3.6)
+    cos_theta = np.cos(theta)
+    sin_theta = np.sin(theta)
+    translation_matrix = np.array([[cos_theta, -sin_theta, 5],
+                                   [sin_theta, cos_theta, 6],
+                                   [0.0, 0.0, 1.0]], dtype=np.float)
+
+    # Apply rigid transformation to image1
+    image2 = cv2.warpPerspective(image1, translation_matrix, image1.shape[::-1])
+
+    # Find rigid transformation matrix using RigidCorr
+    rigid_matrix = findRigidCorr(image1, image2)
+
+    # Apply the obtained rigid transformation matrix to image1
+    rigid_image = cv2.warpPerspective(image1, rigid_matrix, image1.shape[::-1])
+
+    # Display results
+    cv2.imshow("Rigid from cv2", image2)
+    cv2.imshow("Rigid using RigidCorr", rigid_image)
+    cv2.imwrite('imRigidB2.jpg', cv2.cvtColor(image2.astype(np.uint8), cv2.COLOR_GRAY2BGR))
+    print("Rigid transformation matrix (RigidCorr):\n", rigid_matrix)
+
+    cv2.waitKey(0)
+
+    print("Rigid Correlation - END")
+
+
 def imageWarpingDemo(img_path):
     """
     ADD TEST
@@ -367,8 +409,11 @@ def main():
     # translation_correlation(img_path)
 
     # Rigid
-    img_path = 'input/maldives.jpg'
-    rigid_lk(img_path)
+    # img_path = 'input/maldives.jpg'
+    # rigid_lk(img_path)
+
+    img_path = 'input/tigerArt.jpg'
+    rigid_correlation(img_path)
     # imageWarpingDemo(img_path)
 
     # pyrGaussianDemo('input/pyr_bit.jpg')

@@ -147,7 +147,32 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Translation.
     :return: Translation matrix by LK.
     """
-    pass
+    # If the images are not grayscale, convert them to grayscale
+    if len(im1.shape) > 2:
+        im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+    if len(im2.shape) > 2:
+        im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+
+    # Compute the derivative in the x-direction for the second image
+    derivative_filter = np.array([[1, 0, -1]])
+    I_X = cv2.filter2D(im2, -1, derivative_filter, borderType=cv2.BORDER_REPLICATE)
+
+    # Compute the difference between the first and second image
+    diff = im2 - im1
+
+    # Compute the correlation matrix for the derivative and difference
+    correlation = cv2.filter2D(I_X, -1, diff, borderType=cv2.BORDER_REPLICATE)
+
+    # Compute the translation parameters using the Lucas-Kanade equation
+    dx = np.sum(np.sum(I_X ** 2, axis=0) * np.sum(correlation, axis=0)) / np.sum(I_X ** 2)
+    dy = np.sum(np.sum(I_X ** 2, axis=1) * np.sum(correlation, axis=1)) / np.sum(I_X ** 2)
+
+    # Create the translation matrix
+    translation_mat = np.array([[1, 0, dx],
+                                [0, 1, dy],
+                                [0, 0, 1]], dtype=np.float32)
+
+    return translation_mat
 
 
 def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
@@ -165,6 +190,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Translation.
     :return: Translation matrix by correlation.
     """
+
     pass
 
 
@@ -174,6 +200,7 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Rigid.
     :return: Rigid matrix by correlation.
     """
+
     pass
 
 

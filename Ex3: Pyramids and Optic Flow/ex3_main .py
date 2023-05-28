@@ -110,10 +110,44 @@ def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
     plt.show()
 
 
+
 # ---------------------------------------------------------------------------
 # ------------------------ Image Alignment & Warping ------------------------
 # ---------------------------------------------------------------------------
+def compare_translation_lk(image_path):
+    """
+    Compare the results of translation using Lucas-Kanade and Translation correlation methods.
+    :param image_path: Input image path.
+    :return:
+    """
+    print("compare_translation_lk - START")
+    # Read and preprocess input image
+    image1 = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2GRAY)
+    image1 = cv2.resize(image1, (0, 0), fx=0.5, fy=0.5)
+    cv2.imwrite('imTransA1.jpg', cv2.cvtColor(image1.astype(np.uint8), cv2.COLOR_RGB2BGR))
 
+    # Define translation matrix
+    translation_matrix = np.array([[1, 0, -5],
+                                   [0, 1, -5],
+                                   [0, 0, 1]], dtype=np.float)
+
+    # Apply translation to image1
+    image2 = cv2.warpPerspective(image1, translation_matrix, image1.shape[::-1])
+
+    # Find translation matrix using Lucas-Kanade
+    lk_matrix = findTranslationLK(image1, image2)
+
+    # Apply the obtained translation matrix to image1
+    lk_image = cv2.warpPerspective(image1, lk_matrix, image1.shape[::-1])
+
+    # Display results
+    cv2.imshow("Translation from cv2", image2)
+    cv2.imshow("Translation using Lucas-Kanade", lk_image)
+    cv2.imwrite('imTransA2.jpg', cv2.cvtColor(image2.astype(np.uint8), cv2.COLOR_RGB2BGR))
+    print("Translation matrix (Lucas-Kanade):\n", lk_matrix)
+    cv2.waitKey(0)
+
+    print("compare_translation_lk - END")
 
 def imageWarpingDemo(img_path):
     """
@@ -243,8 +277,10 @@ def main():
     img_path = 'input/boxMan.jpg'
     # lkDemo(img_path)
     # hierarchicalkDemo(img_path)
-    compareLK(img_path)
-
+    # compareLK(img_path)
+    # Translation
+    img_path = 'input/japan.jpg'
+    compare_translation_lk(img_path)
     # imageWarpingDemo(img_path)
     #
     # pyrGaussianDemo('input/pyr_bit.jpg')

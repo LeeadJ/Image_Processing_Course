@@ -149,6 +149,45 @@ def compare_translation_lk(image_path):
 
     print("compare_translation_lk - END")
 
+def translation_correlation(image_path):
+    """
+    Compare the translation results using Lucas-Kanade and translation correlation methods.
+    :param image_path: Image input.
+    :return:
+    """
+    print("Translation correlation - START")
+
+    # Read and preprocess the input image
+    image1 = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2GRAY)
+    image1 = cv2.resize(image1, (0, 0), fx=0.5, fy=0.5)
+    cv2.imwrite('imTransB1.jpg', cv2.cvtColor(image1.astype(np.uint8), cv2.COLOR_RGB2BGR))
+
+    # Define translation matrix
+    translation_matrix = np.array([[1, 0, -20],
+                                   [0, 1, -20],
+                                   [0, 0, 1]], dtype=np.float)
+
+    # Apply translation to image1
+    image2 = cv2.warpPerspective(image1, translation_matrix, image1.shape[::-1])
+
+    # Find translation matrix using correlation method
+    correlation_matrix = findTranslationCorr(image1, image2)
+
+    # Convert correlation matrix to the expected format
+    correlation_matrix = np.vstack([correlation_matrix, [0, 0, 1]])
+
+    # Apply the obtained translation matrix to image1
+    correlated_image = cv2.warpPerspective(image1, correlation_matrix, image1.shape[::-1])
+
+    # Display results
+    cv2.imshow("Translation from cv2", image2)
+    cv2.imshow("Translation using Correlation", correlated_image)
+    cv2.imwrite('imTransB2.jpg', cv2.cvtColor(image2.astype(np.uint8), cv2.COLOR_RGB2BGR))
+    print("Translation matrix (Correlation):\n", correlation_matrix)
+
+    cv2.waitKey(0)
+
+    print("Translation correlation - END")
 def imageWarpingDemo(img_path):
     """
     ADD TEST
@@ -279,10 +318,12 @@ def main():
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
     # Translation
-    img_path = 'input/japan.jpg'
-    compare_translation_lk(img_path)
+    # img_path = 'input/japan.jpg'
+    # compare_translation_lk(img_path)
     # imageWarpingDemo(img_path)
-    #
+
+    img_path = 'input/shrekArt.jpg'
+    translation_correlation(img_path)
     # pyrGaussianDemo('input/pyr_bit.jpg')
     # pyrLaplacianDemo('input/pyr_bit.jpg')
     # blendDemo()

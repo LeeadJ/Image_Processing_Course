@@ -191,7 +191,23 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :return: Translation matrix by correlation.
     """
 
-    pass
+    # Convert images to grayscale if necessary
+    if len(im1.shape) > 2:
+        im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+    if len(im2.shape) > 2:
+        im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+
+    # Compute the correlation using matchTemplate
+    result = cv2.matchTemplate(im1, im2, cv2.TM_CCORR_NORMED)
+
+    # Find the location of the best match
+    _, _, _, max_loc = cv2.minMaxLoc(result)
+
+    # Calculate the translation matrix
+    translation_matrix = np.array([[1, 0, max_loc[0] - im1.shape[1]],
+                                   [0, 1, max_loc[1] - im1.shape[0]]], dtype=np.float32)
+
+    return translation_matrix
 
 
 def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:

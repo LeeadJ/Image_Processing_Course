@@ -188,6 +188,46 @@ def translation_correlation(image_path):
     cv2.waitKey(0)
 
     print("Translation correlation - END")
+
+def rigid_lk(image_path):
+    """
+    Compare the results of rigid transformation using Lucas-Kanade and RigidLK methods.
+    :param image_path: Input image path.
+    :return:
+    """
+    print("Rigid LK - START")
+
+    # Read and preprocess the input image
+    image1 = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2GRAY)
+    image1 = cv2.resize(image1, (0, 0), fx=0.5, fy=0.5)
+    cv2.imwrite('imRigidA1.jpg', cv2.cvtColor(image1.astype(np.uint8), cv2.COLOR_RGB2BGR))
+
+    # Define rigid transformation matrix
+    theta = np.radians(3.5)
+    cos_theta = np.cos(theta)
+    sin_theta = np.sin(theta)
+    translation_matrix = np.array([[cos_theta, -sin_theta, -0.5],
+                                   [sin_theta, cos_theta, -0.5],
+                                   [0.0, 0.0, 1.0]], dtype=np.float)
+
+    # Apply rigid transformation to image1
+    image2 = cv2.warpPerspective(image1, translation_matrix, image1.shape[::-1])
+
+    # Find rigid transformation matrix using RigidLK
+    rigid_matrix = findRigidLK(image1, image2)
+
+    # Apply the obtained rigid transformation matrix to image1
+    rigid_image = cv2.warpPerspective(image1, rigid_matrix, image1.shape[::-1])
+
+    # Display results
+    cv2.imshow("Rigid from cv2", image2)
+    cv2.imshow("Rigid using RigidLK", rigid_image)
+    cv2.imwrite('imRigidA2.jpg', cv2.cvtColor(image2.astype(np.uint8), cv2.COLOR_RGB2BGR))
+    print("Rigid transformation matrix (RigidLK):\n", rigid_matrix)
+
+    cv2.waitKey(0)
+
+    print("Rigid LK - END")
 def imageWarpingDemo(img_path):
     """
     ADD TEST
@@ -317,13 +357,20 @@ def main():
     # lkDemo(img_path)
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
-    # Translation
+
+    # Translation Comparison
     # img_path = 'input/japan.jpg'
     # compare_translation_lk(img_path)
+
+    # Translation Correlation
+    # img_path = 'input/shrekArt.jpg'
+    # translation_correlation(img_path)
+
+    # Rigid
+    img_path = 'input/maldives.jpg'
+    rigid_lk(img_path)
     # imageWarpingDemo(img_path)
 
-    img_path = 'input/shrekArt.jpg'
-    translation_correlation(img_path)
     # pyrGaussianDemo('input/pyr_bit.jpg')
     # pyrLaplacianDemo('input/pyr_bit.jpg')
     # blendDemo()

@@ -181,7 +181,33 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Rigid.
     :return: Rigid matrix by LK.
     """
-    pass
+    # Convert images to grayscale if necessary
+    if len(im1.shape) > 2:
+        im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
+    if len(im2.shape) > 2:
+        im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+
+    # Perform feature detection using goodFeaturesToTrack
+    corners1 = cv2.goodFeaturesToTrack(im1, maxCorners=100, qualityLevel=0.3, minDistance=7)
+
+    # Perform optical flow using calcOpticalFlowPyrLK
+    corners2, status, _ = cv2.calcOpticalFlowPyrLK(im1, im2, corners1, None)
+
+    # Filter out invalid points and corresponding corners
+    valid_corners1 = corners1[status == 1]
+    valid_corners2 = corners2[status == 1]
+
+    # Estimate rigid transformation using estimateAffinePartial2D
+    m, _ = cv2.estimateAffinePartial2D(valid_corners1, valid_corners2)
+
+    # Convert the 2x3 transformation matrix to a 3x3 matrix
+    rigid_matrix = np.zeros((3, 3), dtype=np.float32)
+    rigid_matrix[:2, :] = m
+
+    # Set the last row of the matrix to [0, 0, 1]
+    rigid_matrix[2, 2] = 1.0
+
+    return rigid_matrix
 
 
 def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:

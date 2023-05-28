@@ -29,77 +29,60 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     :param win_size: The optical flow window size (odd number)
     :return: Original points [[x,y]...], [[dU,dV]...] for each points
     """
-    # If the image is not grayscale, convert it to grayscale
-    if len(im1.shape) > 2:
-        im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
-    if len(im2.shape) > 2:
-        im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
+    # Convert images to grayscale if they are not already
+    im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY) if len(im1.shape) > 2 else im1
+    im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY) if len(im2.shape) > 2 else im2
 
-    # Compute the derivatives in x and y directions
-    derivative_filter = np.array([[1, 0, -1]])
-    I_X = cv2.filter2D(im2, -1, derivative_filter, borderType=cv2.BORDER_REPLICATE)
-    I_Y = cv2.filter2D(im2, -1, derivative_filter.T, borderType=cv2.BORDER_REPLICATE)
+    # Compute derivatives in x and y directions
+    I_X = cv2.filter2D(im2, -1, np.array([[1, 0, -1]]), borderType=cv2.BORDER_REPLICATE)
+    I_Y = cv2.filter2D(im2, -1, np.array([[1], [0], [-1]]), borderType=cv2.BORDER_REPLICATE)
     I_T = im2 - im1
 
-    # Initialize arrays to store the calculated velocities and corresponding points
+    # Initialize arrays to store velocities and corresponding points
     velocities = []
     points = []
 
     for i in range(step_size, im1.shape[0], step_size):
         for j in range(step_size, im1.shape[1], step_size):
-            # Create a small sample of I_X, I_Y, and I_T for the current window
-            sample_I_X = I_X[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
-            sample_I_Y = I_Y[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
-            sample_I_T = I_T[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
+            # Create a sample window for current point
+            window_X = I_X[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
+            window_Y = I_Y[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
+            window_T = I_T[i - win_size // 2:i + win_size // 2 + 1, j - win_size // 2: j + win_size // 2 + 1]
 
-            # Flatten the sample arrays since they will be treated as vectors
-            sample_I_X = sample_I_X.flatten()
-            sample_I_Y = sample_I_Y.flatten()
-            sample_I_T = sample_I_T.flatten()
+            # Flatten the window arrays
+            window_X = window_X.flatten()
+            window_Y = window_Y.flatten()
+            window_T = window_T.flatten()
 
-            # Size of the samples
-            n = len(sample_I_X)
+            # Calculate matrices
+            A = np.array([[np.sum(window_X * window_X), np.sum(window_X * window_Y)],
+                          [np.sum(window_X * window_Y), np.sum(window_Y * window_Y)]])
+            B = np.array([[-np.sum(window_X * window_T)],
+                          [-np.sum(window_Y * window_T)]])
 
-            # Calculate matrices (A^tA)^-1 and A^tB
-            sum_IX_squared = sum(sample_I_X[h] ** 2 for h in range(n))
-            sum_IX_IY = sum(sample_I_X[h] * sample_I_Y[h] for h in range(n))
-            sum_IY_squared = sum(sample_I_Y[h] ** 2 for h in range(n))
-
-            sum_IX_IT = sum(sample_I_X[h] * sample_I_T[h] for h in range(n))
-            sum_IY_IT = sum(sample_I_Y[h] * sample_I_T[h] for h in range(n))
-
-            # Enter the calculated values into a 2x2 matrix
-            A = np.array([[sum_IX_squared, sum_IX_IY], [sum_IX_IY, sum_IY_squared]])
-            B = np.array([[-sum_IX_IT], [-sum_IY_IT]])
-
-            # Get eigenvalues and eigenvectors
+            # Compute eigenvalues and eigenvectors
             eigen_val, eigen_vec = np.linalg.eig(A)
             eig_val1 = eigen_val[0]
             eig_val2 = eigen_val[1]
 
             # Ensure eigenvalues satisfy the conditions
             if eig_val1 < eig_val2:
-                temp = eig_val1
-                eig_val1 = eig_val2
-                eig_val2 = temp
+                eig_val1, eig_val2 = eig_val2, eig_val1
 
-            # Condition 2: If it holds, add the point
+            # Check conditions for valid optical flow
             if eig_val2 <= 1 or eig_val1 / eig_val2 >= 100:
                 continue
 
             # Calculate u and v components of velocity
-            vector_u_v = np.linalg.inv(A) @ B
-            u = vector_u_v[0][0]
-            v = vector_u_v[1][0]
+            u, v = np.linalg.inv(A) @ B
 
             points.append([j, i])
-            velocities.append([u, v])
+            velocities.append([u[0], v[0]])
 
     return np.array(points), np.array(velocities)
 
 
-def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
-                     stepSize: int, winSize: int) -> np.ndarray:
+def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, winSize: int) -> np.ndarray:
     """
     :param img1: First image
     :param img2: Second image
@@ -109,25 +92,30 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     :return: A 3d array, with a shape of (m, n, 2),
     where the first channel holds U, and the second V.
     """
-    img1_pyr = gaussianPyr(img1, k)
-    img2_pyr = gaussianPyr(img2, k)
 
-    xy_prev, uv_prev = opticalFlow(img1_pyr[-1], img2_pyr[-1], stepSize, winSize)
-    xy_prev = xy_prev.tolist()
-    uv_prev = uv_prev.tolist()
+    img1_pyramid = gaussianPyr(img1, k)
+    img2_pyramid = gaussianPyr(img2, k)
+
+    # Optical flow calculation for the last pyramid level
+    xy_prev, uv_prev = opticalFlow(img1_pyramid[-1], img2_pyramid[-1], stepSize, winSize)
+    xy_prev = list(xy_prev)
+    uv_prev = list(uv_prev)
 
     for i in range(1, k):
-        xy_i, uv_i = opticalFlow(img1_pyr[-1 - i], img2_pyr[-1 - i], stepSize, winSize)
-        xy_i = xy_i.tolist()
-        uv_i = uv_i.tolist()
+        # Calculate optical flow for the current level
+        xy_i, uv_i = opticalFlow(img1_pyramid[-1 - i], img2_pyramid[-1 - i], stepSize, winSize)
+        uv_i = list(uv_i)
+        xy_i = list(xy_i)
 
-        for j in range(len(xy_i)):
-            xy_i[j] = xy_i[j].tolist()
+        for g in range(len(xy_i)):
+            xy_i[g] = list(xy_i[g])
 
+        # Update uv according to the formula
         for j in range(len(xy_prev)):
             xy_prev[j] = [element * 2 for element in xy_prev[j]]
             uv_prev[j] = [element * 2 for element in uv_prev[j]]
 
+        # If the locations of movements we found are new, append them; otherwise, add them to the proper location
         for j in range(len(xy_i)):
             if xy_i[j] in xy_prev:
                 uv_prev[j] += uv_i[j]
@@ -135,19 +123,17 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
                 xy_prev.append(xy_i[j])
                 uv_prev.append(uv_i[j])
 
-    flow_matrix = np.zeros(shape=(img1.shape[0], img1.shape[1], 2))
+    # Convert uv and xy to a 3-dimensional array
+    flow_array = np.zeros(shape=(img1.shape[0], img1.shape[1], 2))
 
     for x in range(img1.shape[0]):
         for y in range(img1.shape[1]):
             if [y, x] not in xy_prev:
-                flow_matrix[x, y] = [0, 0]
+                flow_array[x, y] = [0, 0]
             else:
-                flow_matrix[x, y] = uv_prev[xy_prev.index([y, x])]
+                flow_array[x, y] = uv_prev[xy_prev.index([y, x])]
 
-    if flow_matrix is None:
-        return np.zeros(shape=(img1.shape[0], img1.shape[1], 2))  # Return empty flow matrix as fallback
-
-    return flow_matrix
+    return flow_array
 
 
 # ---------------------------------------------------------------------------
@@ -215,7 +201,30 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     :param levels: Pyramid depth
     :return: Gaussian pyramid (list of images)
     """
-    pass
+    # Adjust the image size to match the pyramid levels
+    img_height = np.power(2, levels) * int(img.shape[0] / np.power(2, levels))
+    img_width = np.power(2, levels) * int(img.shape[1] / np.power(2, levels))
+    img = img[0:img_height, 0:img_width]
+
+    pyramid = [img]  # List to store pyramid images
+    kernel_size = 5
+
+    for i in range(1, levels):
+        # Generate Gaussian kernel
+        sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8
+        kernel = cv2.getGaussianKernel(kernel_size, sigma)
+
+        # Apply the kernel for blurring
+        img = cv2.filter2D(img, -1, kernel=kernel, borderType=cv2.BORDER_REPLICATE)
+        img = cv2.filter2D(img, -1, kernel=np.transpose(kernel), borderType=cv2.BORDER_REPLICATE)
+
+        # Downsample the image by a factor of 2
+        img = img[::2, ::2]
+
+        # Add the downsampled image to the pyramid
+        pyramid.append(img)
+
+    return pyramid
 
 
 def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:

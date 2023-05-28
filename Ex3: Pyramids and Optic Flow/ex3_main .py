@@ -8,23 +8,31 @@ import time
 
 
 def lkDemo(img_path):
-    print("LK Demo")
+    print("LK Demo - START")
 
+    # Load and preprocess images
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    t = np.array([[1, 0, -.2],
-                  [0, 1, -.1],
-                  [0, 0, 1]], dtype=np.float)
-    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
-    st = time.time()
-    pts, uv = opticalFlow(img_1.astype(np.float), img_2.astype(np.float), step_size=20, win_size=5)
-    et = time.time()
+    img_1 = cv2.resize(img_1, (0, 0), fx=0.5, fy=0.5)
 
-    print("Time: {:.4f}".format(et - st))
-    print(np.median(uv,0))
-    print(np.mean(uv,0))
+    # Apply perspective transformation to create img_2
+    transformation_matrix = np.array([[1, 0, -0.2],
+                                      [0, 1, -0.1],
+                                      [0, 0, 1]], dtype=np.float)
+    img_2 = cv2.warpPerspective(img_1, transformation_matrix, img_1.shape[::-1])
 
-    displayOpticalFlow(img_2, pts, uv)
+    # Calculate optical flow
+    start_time = time.time()
+    points, optical_flow = opticalFlow(img_1.astype(np.float), img_2.astype(np.float), step_size=20, win_size=5)
+    end_time = time.time()
+
+    # Print time taken and flow statistics
+    print("Time: {:.4f}".format(end_time - start_time))
+    print(np.median(optical_flow, 0))
+    print(np.mean(optical_flow, 0))
+
+    # Display optical flow
+    displayOpticalFlow(img_2, points, optical_flow)
+    print("LK Demo - END")
 
 
 def hierarchicalkDemo(img_path):
@@ -33,41 +41,34 @@ def hierarchicalkDemo(img_path):
     :param img_path: Image input
     :return:
     """
-    print("Hierarchical LK Demo")
+    print("Hierarchical LK Demo - START")
 
-    # Load and preprocess images
-    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    img_1 = cv2.resize(img_1, (0, 0), fx=0.5, fy=0.5)
-    t = np.array([[1, 0, -0.2],
-                  [0, 1, -0.1],
-                  [0, 0, 1]], dtype=np.float)
-    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    # Load and preprocess the images
+    img1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    img1 = cv2.resize(img1, (0, 0), fx=0.5, fy=0.5)
 
-    # Compute optical flow
-    st = time.time()
-    arr3d = opticalFlowPyrLK(img_1.astype(np.float), img_2.astype(np.float), stepSize=20, winSize=5, k=5)
+    # Apply a perspective transformation to create the second image
+    transformation_matrix = np.array([[1, 0, -0.2],
+                                      [0, 1, -0.1],
+                                      [0, 0, 1]], dtype=np.float)
+    img2 = cv2.warpPerspective(img1, transformation_matrix, img1.shape[::-1])
 
-    # Extract relevant points and vectors
-    pts = []
-    uv = []
-    for x in range(len(arr3d)):
-        for y in range(len(arr3d[0])):
-            if np.any(arr3d[x, y] != 0):
-                pts.append([y, x])
-                uv.append(arr3d[x, y])
+    # Perform hierarchical Lucas-Kanade optical flow
+    start_time = time.time()
+    optical_flow_result = opticalFlowPyrLK(img1.astype(np.float), img2.astype(np.float), k=5, stepSize=20,
+                                              winSize=5)
+    points, velocities = convert_3d_array_to_points(optical_flow_result)
+    end_time = time.time()
 
-    pts = np.array(pts)
-    uv = np.array(uv)
+    # Print timing information and statistics of optical flow velocities
+    print("Time: {:.4f}".format(end_time - start_time))
+    print("Median velocity:", np.median(velocities, axis=0))
+    print("Mean velocity:", np.mean(velocities, axis=0))
 
-    et = time.time()
+    # Display the optical flow
+    displayOpticalFlow(img2, points, velocities)
 
-    # Print statistics
-    print("Time: {:.4f}".format(et - st))
-    print(np.median(uv, 0))
-    print(np.mean(uv, 0))
-
-    # Display optical flow
-    displayOpticalFlow(img_2, pts, uv)
+    print("Hierarchical LK Demo - END")
 
 
 def compareLK(img_path):
@@ -173,12 +174,26 @@ def blendDemo():
 
     cv2.imwrite('sunset_cat.png', cv2.cvtColor((im_blend * 255).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
+# ---------------------------------------------------------------------------
+# --------------------- My Helper Functions ---------------------
+# ---------------------------------------------------------------------------
+
+def convert_3d_array_to_points(mat: np.ndarray) -> (np.ndarray, np.ndarray):
+    x_y_return = []
+    u_x_return = []
+    for x in range(len(mat)):
+        for y in range(len(mat[0])):
+            dummy = mat[x, y]
+            if dummy[0] != 0 or dummy[1] != 0:
+                x_y_return.append([y, x])
+                u_x_return.append(dummy)
+    return np.array(x_y_return), np.array(u_x_return)
 
 def main():
     print("ID:", myID())
 
     img_path = 'input/boxMan.jpg'
-    # lkDemo(img_path)
+    lkDemo(img_path)
     hierarchicalkDemo(img_path)
     # compareLK(img_path)
     #

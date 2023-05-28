@@ -338,7 +338,39 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     :param levels: Pyramid depth
     :return: Laplacian Pyramid (list of images)
     """
-    pass
+    pyramid = []
+
+    # Check if the image is already grayscale
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        # Convert the input image to grayscale
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    img = img.astype(np.float32)
+
+    for _ in range(levels):
+        # Apply Gaussian blur to the image
+        blurred = cv2.GaussianBlur(img, (5, 5), 0)
+
+        # Expand the blurred image using pyrUp
+        expanded = cv2.pyrUp(blurred)
+
+        # Crop the expanded image to match the size of the original image
+        height, width = img.shape[:2]
+        expanded = expanded[:height, :width]
+
+        # Compute the Laplacian by subtracting the expanded image from the original image
+        laplacian = img - expanded
+
+        # Add the Laplacian image to the pyramid
+        pyramid.append(laplacian.astype(np.uint8))  # Convert back to np.uint8 for compatibility
+
+        # Set the blurred image as the input for the next iteration
+        img = blurred
+
+    # Add the smallest level (Gaussian image) to the pyramid
+    pyramid.append(img)
+
+    return pyramid
 
 
 def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
@@ -347,7 +379,27 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
     :param lap_pyr: Laplacian Pyramid
     :return: Original image
     """
-    pass
+    # Get the number of levels in the Laplacian pyramid
+    levels = len(lap_pyr)
+
+    # Start with the smallest level (Gaussian image) from the Laplacian pyramid
+    img = lap_pyr[levels - 1]
+
+    # Iterate through the Laplacian pyramid in reverse order (from the second-smallest level to the largest)
+    for i in range(levels - 2, -1, -1):
+        # Expand the image to the size of the next level
+        expanded = cv2.pyrUp(img)
+
+        # Get the dimensions of the next level
+        height, width = lap_pyr[i].shape[:2]
+
+        # Crop the expanded image to match the size of the next level
+        expanded = expanded[:height, :width]
+
+        # Add the Laplacian of the current level to the expanded image
+        img = expanded + lap_pyr[i]
+
+    return img
 
 
 def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,

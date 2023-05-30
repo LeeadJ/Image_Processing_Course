@@ -52,20 +52,20 @@ The assignment consists of the following parts:
      - `blurImage1(in_image: np.ndarray, k_size: int) -> np.ndarray`: Blur an image using a Gaussian kernel.
      - `blurImage2(in_image: np.ndarray, k_size: int) -> np.ndarray`: Blur an image using a Gaussian kernel using OpenCV built-in functions.
 <br>
-<br>
+
 3. **Edge detection** 
    - Implementation of edge detection algorithms.
    - Functions:
      - `edgeDetectionZeroCrossingSimple(img: np.ndarray) -> np.ndarray`: Detect edges using the "ZeroCrossing" method.
      - `edgeDetectionZeroCrossingLOG(img: np.ndarray) -> np.ndarray`: Detect edges using the "ZeroCrossingLOG" method.
 <br>
-<br>
+
 4. **Hough Circles** 
    - Implementation of the Hough circles transform.
    - Function:
      - `houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list`: Find circles in an image using a Hough Transform algorithm extension.
 <br>
-<br>
+
 5. **Bilateral filter** 
    - Implementation of the Bilateral filter.
    - Function:

@@ -12,7 +12,7 @@ This repository contains the implementation of the exercises for the Convolution
 ## Exercise Details
 
 - Exercise: Convolution & Edge Detection
-- Due date: 28.4.2022
+- Due date: 28.4.2023
 ---
 ## About The Project
 

@@ -12,7 +12,7 @@ This repository contains the implementation of the exercises for the Convolution
 ## Exercise Details
 
 - Exercise: Convolution & Edge Detection
-- Due date: 28.4.2022
+- Due date: 28.4.2023
 ---
 ## About The Project
 
@@ -37,8 +37,8 @@ The assignment consists of the following parts:
      - `conv1D(in_signal: np.ndarray, k_size: np.ndarray) -> np.ndarray`: Convolve a 1-D array with a given kernel.
      - `conv2D(in_image: np.ndarray, kernel: np.ndarray) -> np.ndarray`: Convolve a 2-D array with a given kernel.
 <br>
-<br>
-2. **Image derivatives & blurring**<br>
+
+2. **Image derivatives & blurring**
  
    2.1 **Derivatives** 
    - Calculation of image gradient magnitude and direction using simple convolution.
@@ -52,20 +52,20 @@ The assignment consists of the following parts:
      - `blurImage1(in_image: np.ndarray, k_size: int) -> np.ndarray`: Blur an image using a Gaussian kernel.
      - `blurImage2(in_image: np.ndarray, k_size: int) -> np.ndarray`: Blur an image using a Gaussian kernel using OpenCV built-in functions.
 <br>
-<br>
+
 3. **Edge detection** 
    - Implementation of edge detection algorithms.
    - Functions:
      - `edgeDetectionZeroCrossingSimple(img: np.ndarray) -> np.ndarray`: Detect edges using the "ZeroCrossing" method.
      - `edgeDetectionZeroCrossingLOG(img: np.ndarray) -> np.ndarray`: Detect edges using the "ZeroCrossingLOG" method.
 <br>
-<br>
+
 4. **Hough Circles** 
    - Implementation of the Hough circles transform.
    - Function:
      - `houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list`: Find circles in an image using a Hough Transform algorithm extension.
 <br>
-<br>
+
 5. **Bilateral filter** 
    - Implementation of the Bilateral filter.
    - Function:

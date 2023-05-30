@@ -423,25 +423,25 @@ def main():
     print("ID:", myID())
 
     img_path = 'input/boxMan.jpg'
-    # lkDemo(img_path)
-    # hierarchicalkDemo(img_path)
-    # compareLK(img_path)
+    lkDemo(img_path)
+    hierarchicalkDemo(img_path)
+    compareLK(img_path)
+    #
+    # # Translation Comparison
+    compare_translation_lk('input/japan.jpg')
+    #
+    # # Translation Correlation
+    translation_correlation('input/shrekArt.jpg')
+    #
+    # # Rigid
+    rigid_lk('input/maldives.jpg')
+    rigid_correlation('input/tigerArt.jpg')
+    #
+    # # Image Warping
+    imageWarpingDemo(img_path)
 
-    # Translation Comparison
-    # compare_translation_lk('input/japan.jpg')
-
-    # Translation Correlation
-    # translation_correlation('input/shrekArt.jpg')
-
-    # Rigid
-    # rigid_lk('input/maldives.jpg')
-    # rigid_correlation('input/tigerArt.jpg')
-
-    # Image Warping
-    # imageWarpingDemo(img_path)
-
-    # pyrGaussianDemo('input/pyr_bit.jpg')
-    # pyrLaplacianDemo('input/pyr_bit.jpg')
+    pyrGaussianDemo('input/pyr_bit.jpg')
+    pyrLaplacianDemo('input/pyr_bit.jpg')
     blendDemo()
 
 

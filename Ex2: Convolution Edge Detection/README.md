@@ -37,8 +37,8 @@ The assignment consists of the following parts:
      - `conv1D(in_signal: np.ndarray, k_size: np.ndarray) -> np.ndarray`: Convolve a 1-D array with a given kernel.
      - `conv2D(in_image: np.ndarray, kernel: np.ndarray) -> np.ndarray`: Convolve a 2-D array with a given kernel.
 <br>
-<br>
-2. **Image derivatives & blurring**<br>
+
+2. **Image derivatives & blurring**
  
    2.1 **Derivatives** 
    - Calculation of image gradient magnitude and direction using simple convolution.
